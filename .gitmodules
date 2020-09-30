@@ -1,3 +1,21 @@
 [submodule "golang"]
 	path = golang
 	url = https://github.com/gabo1208/golang.git
+[submodule "c-cpp"]
+	path = c-cpp
+	url = https://github.com/gabo1208/c-cpp
+[submodule "haskell"]
+	path = haskell
+	url = https://github.com/gabo1208/haskell
+[submodule "python"]
+	path = python
+	url = https://github.com/gabo1208/python
+[submodule "js/react"]
+	path = js/react
+	url = https://github.com/gabo1208/react
+[submodule "js/angular"]
+	path = js/angular
+	url = https://github.com/gabo1208/angular
+[submodule "js/apollo-express-mongo"]
+	path = js/apollo-express-mongo
+	url = https://github.com/gabo1208/apollo-express-mongo
