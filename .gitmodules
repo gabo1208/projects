@@ -19,3 +19,6 @@
 [submodule "js/apollo-express-mongo"]
 	path = js/apollo-express-mongo
 	url = https://github.com/gabo1208/apollo-express-mongo
+[submodule "js/react-native"]
+	path = js/react-native
+	url = https://github.com/gabo1208/react-native
