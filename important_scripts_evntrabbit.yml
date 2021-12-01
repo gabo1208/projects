@@ -1,0 +1,77 @@
+kubectl apply -f https://github.com/rabbitmq/cluster-operator/releases/download/v1.6.0/cluster-operator.yml
+kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.2.0/cert-manager.yaml
+kubectl apply -f https://github.com/rabbitmq/messaging-topology-operator/releases/download/v0.10.0/messaging-topology-operator-with-certmanager.yaml
+kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.0.0/serving-crds.yaml
+kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.0.0/serving-core.yaml
+kubectl apply -f https://github.com/knative/eventing/releases/download/knative-v1.0.0/eventing-crds.yaml
+kubectl apply -f https://github.com/knative/eventing/releases/download/knative-v1.0.0/eventing-core.yaml
+
+export KO_DOCKER_REPO=kind.local && export KIND_CLUSTER_NAME=knative
+ko apply -f ./config/broker/
+ko apply -f ./config/source/
+
+// knative-sandbox/eventing-rabbitmq
+SYSTEM_NAMESPACE=knative-eventing go test -v -race -count=1 -timeout=15m -tags=e2e ./test/e2e/... -run 'TestSource.*'
+SYSTEM_NAMESPACE=knative-eventing go test -v -race -count=1 -timeout=15m -tags=e2e ./test/e2e/... -run 'Test.*Broker.*'
+
+// knative/eventing
+SYSTEM_NAMESPACE=knative-eventing go test -v -race -count=1 -timeout=15m -tags=e2e ./test/conformance -run 'TestChannel.*' -brokers=eventing.knative.dev/v1:MTChannelBasedBroker -channels=messaging.knative.dev/v1:Channel,messaging.knative.dev/v1:InMemoryChannel -sources=sources.knative.dev/v1:ApiServerSource,sources.knative.dev/v1:ContainerSource,sources.knative.dev/v1beta2:PingSource
+SYSTEM_NAMESPACE=knative-eventing go test -race -count=1 -parallel=12 -v -timeout=50m -tags=e2e ./test/rekt/... -run 'Test.*Channel.*'
+SYSTEM_NAMESPACE=knative-eventing go test -race -count=1 -parallel=12 -v -timeout=50m -tags=e2e ./test/e2e/... -run 'TestBrokerPreferReplyHeader' -brokers=eventing.knative.dev/v1:MTChannelBasedBroker -channels=messaging.knative.dev/v1:Channel,messaging.knative.dev/v1:InMemoryChannel -sources=sources.knative.dev/v1:ApiServerSource,sources.knative.dev/v1:ContainerSource,sources.knative.dev/v1beta2:PingSource
+SYSTEM_NAMESPACE=knative-eventing go test -race -count=1 -parallel=12 -v -timeout=50m -tags=e2e ./test/e2e/... -run 'TestBrokerRedelivery' -brokers=eventing.knative.dev/v1:MTChannelBasedBroker -channels=messaging.knative.dev/v1:Channel,messaging.knative.dev/v1:InMemoryChannel -sources=sources.knative.dev/v1:ApiServerSource,sources.knative.dev/v1:ContainerSource,sources.knative.dev/v1beta2:PingSource
+SYSTEM_NAMESPACE=knative-eventing go test -race -count=1 -v -tags=e2e ./test/e2e -run 'TestBrokerPreferReplyHeader'
+
+// Install rabbitmq things
+kubectl apply -f https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml
+kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.3.1/cert-manager.yaml
+kubectl wait --for=condition=Ready pods --all -n cert-manager
+kubectl apply -f https://github.com/rabbitmq/messaging-topology-operator/releases/latest/download/messaging-topology-operator-with-certmanager.yaml
+
+ko apply -f ./config/broker/ && ko apply -f ./config/source/ && sleep 15 && SYSTEM_NAMESPACE=knative-eventing go test -v -race -count=1 -timeout=15m -tags=e2e ./test/e2e/... -run 'TestSource.*'
+ko apply -f ./config/broker/ && ko apply -f ./config/source/ && sleep 15 && SYSTEM_NAMESPACE=knative-eventing go test -v -race -count=1 -timeout=15m -tags=e2e ./test/e2e/... -run 'Test.*Broker.*'
+
+// Performance tests
+bash "$GOPATH/src/knative.dev/eventing/vendor/knative.dev/pkg/test/mako/stub-sidecar/read_results.sh" "broker-perf-aggregator" perf-eventing ${mako_port:-10001} ${timeout:-120} ${retries:-100} ${retries_interval:-10} "test-mako.data"
+
+kubectl patch trigger conformance-trigger --type merge -p '{"metadata":{"finalizers":[]}}'
+go test -coverprofile cover.out ./pkg/adapter/
+go tool cover -html=cover.out -o cover.html
+golangci-lint run
+
+SYSTEM_NAMESPACE=knative-eventing go test -v -race -count=1 -timeout=15m -tags=e2e ./test/conformance -run 'TestChannelSpec'
+
+kubectl get secrets rabbitmqc-default-user -o json | jq -r '.data["default_user.conf"]' | base64 -d
+
+// Perf tests
+WSL2 Install xcsrv
+export DISPLAY="`grep nameserver /etc/resolv.conf | sed 's/nameserver //'`:0"
+kubectl create ns perf-eventing
+kubectl create configmap -n perf-eventing config-mako --from-file=test/performance/benchmarks/broker-imc/dev.config
+ko apply -f test/performance/benchmarks/broker-imc/100-broker-perf-setup.yaml
+ko apply -f test/performance/benchmarks/broker-imc/200-broker-perf.yaml
+
+bash "./vendor/knative.dev/pkg/test/mako/stub-sidecar/read_results.sh" "broker-perf-aggregator" perf-eventing ${mako_port:-10001} ${timeout:-120} ${retries:-100} ${retries_interval:-10} "mako.csv"
+gnuplot -c test/performance/latency-and-thpt-plot.plg mako.csv 0.005 480 520
+
+kubectl auth can-i list ksvc --as=system:serviceaccount:knative-eventing:imc-controller  -n knative-eventing  
+
+// Knative Func
+export FUNC_REGISTRY=docker.io/gabo1208
+
+// Update WSL2
+lsb_release -a
+sudo apt install update-manager-core
+sudo do-release-upgrade [-d]
+
+// Gcloud usefull commands
+gfreites-gcp-test
+
+// CloudEvents
+curl -X POST \
+  -H "content-type: application/json"  \
+  -H "ce-specversion: 1.0"  \
+  -H "ce-source: curl-command"  \
+  -H "ce-type: curl.demo"  \
+  -H "ce-id: 123-abc"  \
+  -d '{"name":"Dave"}' \
+  http://cloudevents-go.default.1.2.3.4.sslip.io
