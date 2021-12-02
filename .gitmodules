@@ -22,3 +22,6 @@
 [submodule "js/react-native"]
 	path = js/react-native
 	url = https://github.com/gabo1208/react-native
+[submodule "rust"]
+	path = rust
+	url = https://gabo1208@github.com/gabo1208/rust.git
