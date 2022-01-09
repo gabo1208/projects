@@ -25,3 +25,6 @@
 [submodule "rust"]
 	path = rust
 	url = https://gabo1208@github.com/gabo1208/rust.git
+[submodule "raspberry-pi"]
+	path = raspberry-pi
+	url = git@github.com:gabo1208/raspberry-pi.git
