@@ -6,7 +6,12 @@ kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1
 kubectl apply -f https://github.com/knative/eventing/releases/download/knative-v1.0.0/eventing-crds.yaml
 kubectl apply -f https://github.com/knative/eventing/releases/download/knative-v1.0.0/eventing-core.yaml
 
+// Local
 export KO_DOCKER_REPO=kind.local && export KIND_CLUSTER_NAME=knative
+
+// Cluster
+export KO_DOCKER_REPO=gabo1208
+
 ko apply -f ./config/broker/
 ko apply -f ./config/source/
 
@@ -41,6 +46,7 @@ golangci-lint run
 SYSTEM_NAMESPACE=knative-eventing go test -v -race -count=1 -timeout=15m -tags=e2e ./test/conformance -run 'TestChannelSpec'
 
 kubectl get secrets rabbitmqc-default-user -o json | jq -r '.data["default_user.conf"]' | base64 -d
+kubectl port-forward rabbitmqc 15672:15672
 
 // Perf tests
 WSL2 Install xcsrv
@@ -75,3 +81,16 @@ curl -X POST \
   -H "ce-id: 123-abc"  \
   -d '{"name":"Dave"}' \
   http://cloudevents-go.default.1.2.3.4.sslip.io
+
+https://github.com/benmoss/knative-scripts/blob/main/rabbit-topology.yaml#L53-L76
+
+git ls-files |
+  grep -Ev '^(vendor/|third_party/|.git)' |
+  xargs grep -nE " +$" |
+  reviewdog -efm="%f:%l:%m" \
+        -name="trailing whitespace" \
+        -filter-mode="added" \
+        -fail-on-error="true" \
+        -level="error"
+
+go-licenses save "./..." --save_path="third_party/VENDOR-LICENSE" --force
