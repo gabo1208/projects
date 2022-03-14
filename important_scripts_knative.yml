@@ -1,11 +1,11 @@
-kubectl apply -f https://github.com/rabbitmq/cluster-operator/releases/download/v1.6.0/cluster-operator.yml
-kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.2.0/cert-manager.yaml
-kubectl apply -f https://github.com/rabbitmq/messaging-topology-operator/releases/download/v0.10.0/messaging-topology-operator-with-certmanager.yaml
-kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.0.0/serving-crds.yaml
-kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.0.0/serving-core.yaml
-kubectl apply -f https://github.com/knative/eventing/releases/download/knative-v1.0.0/eventing-crds.yaml
-kubectl apply -f https://github.com/knative/eventing/releases/download/knative-v1.0.0/eventing-core.yaml
-
+kubectl apply -f https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml
+kubectl apply -f https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml
+kubectl apply -f https://github.com/rabbitmq/messaging-topology-operator/releases/latest/download/messaging-topology-operator-with-certmanager.yaml
+kubectl apply -f https://github.com/knative/serving/releases/latest/download/serving-crds.yaml
+kubectl apply -f https://github.com/knative/serving/releases/latest/download/serving-core.yaml
+kubectl apply -f https://github.com/knative/eventing/releases/latest/download/eventing-crds.yaml
+kubectl apply -f https://github.com/knative/eventing/releases/latest/download/eventing-core.yaml
+ v
 // Local
 export KO_DOCKER_REPO=kind.local && export KIND_CLUSTER_NAME=knative
 
@@ -93,4 +93,22 @@ git ls-files |
         -fail-on-error="true" \
         -level="error"
 
-go-licenses save "./..." --save_path="third_party/VENDOR-LICENSE" --force
+// Metrics API server
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+#!/bin/bash
+export KO_DOCKER_REPO=kind.local
+export KIND_CLUSTER_NAME=knative
+
+make kind-cluster install
+for i in {1..5}
+do
+  make test-conformance > test_$i.dat
+  if ! cat test_$i.dat | grep -q "FAIL:"; then
+    echo "Run $i Succeeded, erasing logs file `test_$i.dat`."
+    rm test_$i.dat
+    return
+  fi
+
+  echo "Run $i Failed. Saved log file."
+done
