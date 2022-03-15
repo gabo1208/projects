@@ -105,9 +105,9 @@ for i in {1..5}
 do
   make test-conformance > test_$i.dat
   if ! cat test_$i.dat | grep -q "FAIL:"; then
-    echo "Run $i Succeeded, erasing logs file `test_$i.dat`."
+    echo "Run $i Succeeded, deleting logs file \`test_$i.dat\`."
     rm test_$i.dat
-    return
+    continue
   fi
 
   echo "Run $i Failed. Saved log file."
