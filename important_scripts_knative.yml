@@ -56,6 +56,7 @@ kubectl create configmap -n perf-eventing config-mako --from-file=test/performan
 ko apply -f test/performance/benchmarks/broker-imc/100-broker-perf-setup.yaml
 ko apply -f test/performance/benchmarks/broker-imc/200-broker-perf.yaml
 
+export DISPLAY="`sed -n 's/nameserver //p' /etc/resolv.conf`:0"
 bash "./vendor/knative.dev/pkg/test/mako/stub-sidecar/read_results.sh" "broker-perf-aggregator" perf-eventing ${mako_port:-10001} ${timeout:-120} ${retries:-100} ${retries_interval:-10} "mako.csv"
 gnuplot -c test/performance/latency-and-thpt-plot.plg mako.csv 0.005 480 520
 
@@ -112,3 +113,5 @@ do
 
   echo "Run $i Failed. Saved log file."
 done
+
+go install github.com/google/go-licenses@latest
