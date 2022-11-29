@@ -115,3 +115,6 @@ do
 done
 
 go install github.com/google/go-licenses@latest
+
+/// VMware TAP
+tap-cves list buildservice.tanzu.vmware.com --distribution tap/1.4.x -i high+ -i in-triage
