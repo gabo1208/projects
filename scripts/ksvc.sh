@@ -2,7 +2,7 @@
 
 kail -n knative-serving --since 10m > $NAME.log &
 
-watches=(replicaset pods deployment)
+watches=(kcert secret)
 
 for t in ${watches[@]}; do
   kubectl get $t -o yaml -w > $NAME-$t.log &

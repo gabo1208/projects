@@ -4,11 +4,11 @@ set -o errexit
 set -o pipefail
 set -x
 
-readonly K8S_VERSION=v1.25.11
-readonly KNATIVE_VERSION=v1.11.1
-readonly CONTOUR_VERSION=v1.11.1
-readonly KN_VERSION=v1.11.0
-readonly KIND_IMAGE_SHA=sha256:227fa11ce74ea76a0474eeefb84cb75d8dad1b08638371ecf0e86259b35be0c8
+readonly K8S_VERSION=v1.26.6
+readonly KNATIVE_VERSION=v1.12.1
+readonly CONTOUR_VERSION=v1.12.1
+readonly KN_VERSION=v1.12.0
+readonly KIND_IMAGE_SHA=sha256:6e2d8b28a5b601defe327b98bd1c2d1930b49e5d8c512e1895099e4504007adb
 
 SCRATCH=$(mktemp -d)
 
@@ -92,27 +92,25 @@ if [ -z ${SKIP_SETUP} ]; then
 
   sleep 2
 
-  kubectl wait deployment --for=condition=Available -n contour-external -l '!job-name' --timeout=120s
-  kubectl wait deployment --for=condition=Available -n contour-internal -l '!job-name' --timeout=120s
-  kubectl wait deployment --for=condition=Available -n knative-serving  --all --timeout=120s
+  kubectl wait deployment --for=condition=Available -n contour-external -l '!job-name' --timeout=180s
+  kubectl wait deployment --for=condition=Available -n contour-internal -l '!job-name' --timeout=180s
+  kubectl wait deployment --for=condition=Available -n knative-serving  --all --timeout=180s
 
   kubectl apply -f $SCRATCH/limit.yaml
 fi
-
 
 kind get kubeconfig --internal --name debug-knative > $SCRATCH/kubeconfig
 
 NAME=test-$RANDOM
 
-kail -n knative-serving --since 10m > $NAME.log &
+# kail -n knative-serving --since 10m > $NAME.log &
 
 
-watches=(kpa sks config rev rt ksvc deployment)
+# watches=(kpa sks config rev rt ksvc deployment)
+# for t in ${watches[@]}; do
+# kubectl get $t -o yaml -w > $NAME-$t.log &
+# done
 
-for t in ${watches[@]}; do
-  kubectl get $t -o yaml -w > $NAME-$t.log &
-done
-
-kn service create $NAME --image gcr.io/knative-samples/helloworld-go --request cpu=200m --limit cpu=500m  --force
+kn service create $NAME --image gcr.io/knative-samples/helloworld-go --request cpu=1m --limit cpu=1 --force
 
 kill $(jobs -p)
