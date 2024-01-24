@@ -28,3 +28,6 @@
 [submodule "raspberry-pi"]
 	path = raspberry-pi
 	url = git@github.com:gabo1208/raspberry-pi.git
+[submodule "knative-go-chat-app"]
+	path = knative-go-chat-app
+	url = git@github.com:gabo1208/knative-go-chat-app.git
