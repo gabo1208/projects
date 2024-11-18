@@ -13,3 +13,8 @@ To initialize:
     ```sh
     git submodule update --recursive --remote
     ```
+
+To add a submodule:
+```sh
+git submodule add <remote_url> <destination_folder>
+```
