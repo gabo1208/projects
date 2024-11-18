@@ -31,3 +31,6 @@
 [submodule "knative-go-chat-app"]
 	path = knative-go-chat-app
 	url = git@github.com:gabo1208/knative-go-chat-app.git
+[submodule "java"]
+	path = java
+	url = git@github.com:gabo1208/java.git
