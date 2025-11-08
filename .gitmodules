@@ -34,9 +34,6 @@
 [submodule "java"]
 	path = java
 	url = git@github.com:gabo1208/java.git
-[submodule "earlang"]
-	path = earlang
-	url = git@github.com:gabo1208/earlang.git
 [submodule "erlang"]
 	path = erlang
 	url = git@github.com:gabo1208/erlang.git
